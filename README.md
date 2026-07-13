@@ -1,5 +1,7 @@
 # wechat-local-service-kit
 
+**English** | [简体中文](README.zh-CN.md)
+
 Local-first tooling for macOS WeChat data export, customer memory, and supervised customer-service reply drafts.
 
 This repository started as a WeChat Favorites visualization project. It now also includes a broader local WeChat assistant workflow:
@@ -62,7 +64,7 @@ Fresh Mac assumptions:
 Clone and install:
 
 ```bash
-git clone <PRIVATE_GITHUB_URL> wechat-local-service-kit
+git clone https://github.com/gifted-professor/wechat-local-service-kit-public.git wechat-local-service-kit
 cd wechat-local-service-kit
 python3 -m venv .venv
 source .venv/bin/activate
@@ -619,4 +621,4 @@ The durable project knowledge layer lives in [.project-wiki/](.project-wiki/inde
 
 ## License
 
-No license has been selected yet. Treat the code as private/internal unless a license is added.
+Released under the [MIT License](LICENSE).

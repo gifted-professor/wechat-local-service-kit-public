@@ -1,8 +1,8 @@
 {
   "schema_version": "public_snapshot_manifest_v1",
-  "generated_at": "2026-07-04T16:39:27.491417+00:00",
+  "generated_at": "2026-07-13T08:43:57Z",
   "source_repo": "<private_working_tree>",
-  "file_count": 81,
+  "file_count": 82,
   "files": [
     ".gitignore",
     ".project-wiki/index.md",
@@ -28,6 +28,7 @@
     "MIGRATION.md",
     "PUBLIC_RELEASE.md",
     "README.md",
+    "README.zh-CN.md",
     "SKILL.md",
     "docs/architecture.md",
     "docs/chat-export-runbook.md",
