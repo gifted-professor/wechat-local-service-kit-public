@@ -1,0 +1,9 @@
+{
+  "root": "<scan_root>",
+  "summary": {
+    "blockers": 0,
+    "warnings": 0,
+    "findings": 0
+  },
+  "findings": []
+}
