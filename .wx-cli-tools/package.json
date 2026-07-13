@@ -1,5 +1,5 @@
 {
   "dependencies": {
-    "@jackwener/wx-cli": "^0.1.10"
+    "@jackwener/wx-cli": "^0.3.0"
   }
 }

@@ -1,8 +1,8 @@
 {
   "schema_version": "public_snapshot_manifest_v1",
-  "generated_at": "2026-07-13T08:43:57Z",
+  "generated_at": "2026-07-13T09:03:42Z",
   "source_repo": "<private_working_tree>",
-  "file_count": 82,
+  "file_count": 85,
   "files": [
     ".gitignore",
     ".project-wiki/index.md",
@@ -47,12 +47,14 @@
     "scripts/build_customer_memory.py",
     "scripts/build_runtime_context.py",
     "scripts/build_wechat_digest.py",
+    "scripts/capture_windows_wx_profile.py",
     "scripts/chat_crypto.py",
     "scripts/compare_export_sources.py",
     "scripts/compare_memory_draft.py",
     "scripts/compare_reply_contexts.py",
     "scripts/customer_memory.py",
     "scripts/demo_data.py",
+    "scripts/discover_windows_wechat.py",
     "scripts/draft_reply_candidate_once.py",
     "scripts/draft_reply_worker.py",
     "scripts/export_appmsg_archive.py",
@@ -84,6 +86,7 @@
     "scripts/wechat_schema.py",
     "scripts/wechat_tool_status.py",
     "scripts/wechat_ui_send.py",
+    "scripts/win_wx_multi_key_scan.py",
     "scripts/wx_cli_adapter.py",
     "scripts/wx_cli_profile.py"
   ],

@@ -2,11 +2,11 @@
 
 [English](README.md) | **简体中文**
 
-一个本地优先的 macOS 微信工具箱，用于导出微信数据、构建客户记忆，并生成由人工监督的客服回复草稿。
+一个本地优先的 macOS 与 Windows 微信工具箱，用于导出微信数据、构建客户记忆，并生成由人工监督的客服回复草稿。
 
 这个仓库最初用于生成微信收藏可视化报告，现在也包含一套更完整的本地微信助手流程：
 
-- 将 macOS 微信加密数据库导出为结构化 JSONL。
+- 将 macOS 或 Windows 本地微信加密数据库导出为结构化 JSONL。
 - 按会话构建确定性的客户记忆档案。
 - 生成便于人工检查的客户 Wiki 页面。
 - 使用兼容 OpenAI API 的模型生成回复草稿，并可选择加入客户记忆。
@@ -72,7 +72,7 @@ npm --prefix .wx-cli-tools ci
 
 ```bash
 mkdir -p .wx-cli-tools
-npm --prefix .wx-cli-tools install @jackwener/wx-cli@0.1.10
+npm --prefix .wx-cli-tools install @jackwener/wx-cli@0.3.0
 ```
 
 项目使用的 `wx-cli` 来自 [`jackwener/wx-cli`](https://github.com/jackwener/wx-cli)。
@@ -176,6 +176,65 @@ python3 scripts/build_customer_memory.py \
 
 完整排查步骤见 [微信新账号运行手册](docs/wechat-new-account-runbook.md)。
 
+## Windows：捕获密钥并导出明文 JSONL
+
+Windows 支持刻意只覆盖本地读取与导出，不包含 Windows UI 发送或无人值守自动回复。
+
+运行条件：
+
+- 64 位 Windows，目标微信账号已登录并运行在 `Weixin.exe` 中。
+- 管理员 PowerShell、Python 3.10+、Node.js 18+ 和 Git。
+- 已找到与目标账号对应的 `db_storage` 目录。
+
+在 PowerShell 中安装依赖：
+
+```powershell
+py -3 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+npm --prefix .wx-cli-tools ci
+```
+
+先发现可能的账号与数据库位置。此命令不会读取消息正文或密钥文件：
+
+```powershell
+python scripts/discover_windows_wechat.py --compact
+```
+
+保持目标账号在线，打开几个代表性聊天并向上滚动一些历史。随后在管理员 PowerShell 中执行一次性捕获，把账号标签和 `db_storage` 路径替换成自己的本地值：
+
+```powershell
+python scripts/capture_windows_wx_profile.py windows-main `
+  --db-dir 'D:\wechat\xwechat_files\<wxid>\db_storage' `
+  --activate `
+  --stop-daemon
+```
+
+扫描器会检查所有匹配的 `Weixin.exe` 进程。候选密钥只有通过加密数据库页 HMAC 验证后才会被接受。原始密钥不会打印到终端，也不会写入状态 JSON；它们只保存在被 Git 忽略的本地 profile，例如 `.wx-cli-windows-main/all_keys.json`。
+
+验证当前 profile，然后执行有上限的小规模明文导出：
+
+```powershell
+python scripts/wechat_tool_status.py --skip-daemon --compact
+
+python scripts/export_wx_cli_history.py `
+  --output '.\out\windows-smoke' `
+  --private-only `
+  --session-limit 5 `
+  --max-messages-per-conversation 50
+```
+
+成功后，明文结果位于：
+
+```text
+out\windows-smoke\export\conversations\*.jsonl
+out\windows-smoke\export\conversation_index.json
+out\windows-smoke\export\sessions.json
+out\windows-smoke\export\coverage.json
+```
+
+如果同时登录多个账号，可重复传入 `--pid <Weixin.exe PID>` 来限制扫描目标。如果默认的可写内存页扫描没有找到可验证密钥，可用 `--include-readonly` 重试一次；`--include-bare-hex` 是噪声更大的最后兜底，但所有候选仍必须通过数据库 HMAC 验证。不要提交 profile 目录或 `out/` 中的任何内容。
+
 ## 当前状态
 
 仓库包含可运行的原型脚本，但还不是打包完成的产品。
@@ -189,6 +248,13 @@ python3 scripts/build_customer_memory.py \
 - 单会话 dry-run 回复生成。
 - 客户记忆档案生成和 Markdown Wiki 渲染。
 - 保守的记忆使用门控，避免在宽泛问题中误注入客户历史。
+
+Windows 读取与导出范围：
+
+- 已包含账号/数据库发现和一次性 `Weixin.exe` 内存扫描。
+- 候选密钥经过 HMAC 验证，并且只写入本地、被 Git 忽略的 profile。
+- 明文导出复用与 macOS 相同的 `wx-cli` JSONL 流程。
+- 真实捕获必须在 Windows 主机上验证，无法在 macOS CI 中执行。
 
 仍处于实验阶段：
 
@@ -214,6 +280,9 @@ python3 scripts/build_customer_memory.py \
 ```text
 scripts/
   grab_wechat_key.py             # 使用 Frida 捕获 PBKDF2 事件
+  discover_windows_wechat.py     # 不读取消息，发现 Windows 账号与数据库位置
+  win_wx_multi_key_scan.py       # 对 Windows Weixin.exe 内存中的候选密钥做 HMAC 验证
+  capture_windows_wx_profile.py  # 把验证后的密钥保存到本地且被 Git 忽略的 profile
   match_wechat_key.py            # 根据数据库 salt 匹配捕获的密钥
   chat_crypto.py                 # 准备可读取的 SQLite 副本
   export_chat_history.py         # 导出联系人、会话和消息
@@ -535,7 +604,7 @@ python3 scripts/generate_report.py \
 
 ## 已知限制
 
-- macOS 或微信版本变化可能破坏密钥捕获、数据库解析或 UI 自动化。
+- 操作系统或微信版本变化可能破坏密钥捕获、数据库解析或 UI 自动化。
 - 旧导出中的消息方向元数据可能不可靠，方向敏感的判断应优先使用最近实时上下文。
 - 确定性提取出的客户事实可能有噪声，只能作为候选信息。
 - 微信界面布局或焦点变化可能导致 UI 自动化异常。

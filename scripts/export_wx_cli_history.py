@@ -10,7 +10,15 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from wechat_common import _ensure_dir, _md5_hex, _safe_slug, _timestamp_to_iso, _write_json, _write_jsonl
+from wechat_common import (
+    _ensure_dir,
+    _md5_hex,
+    _safe_slug,
+    _timestamp_to_iso,
+    _write_json,
+    _write_jsonl,
+    configure_utf8_stdio,
+)
 from wechat_privacy import redact_obj
 from wx_cli_adapter import (
     WxCliError,
@@ -598,6 +606,7 @@ def export_history(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def main() -> int:
+    configure_utf8_stdio()
     args = parse_args()
     try:
         summary = export_history(args)

@@ -6,6 +6,7 @@ import subprocess
 from datetime import datetime, timezone
 from typing import Any
 
+from wechat_common import configure_utf8_stdio
 from wechat_privacy import redact_obj, redact_text
 from wx_cli_adapter import WxCliError, _find_wx, describe_command_policy, get_daemon_status
 from wx_cli_profile import active_profile_summary
@@ -22,6 +23,8 @@ def _run_version(wx_path: str) -> dict[str, Any]:
             check=False,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=5.0,
         )
     except (OSError, subprocess.TimeoutExpired) as exc:
@@ -73,6 +76,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
+    configure_utf8_stdio()
     args = parse_args()
     status = build_status(include_daemon=not args.skip_daemon)
     print(json.dumps(status, ensure_ascii=False, indent=None if args.compact else 2))

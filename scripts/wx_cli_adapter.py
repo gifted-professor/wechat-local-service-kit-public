@@ -63,7 +63,17 @@ LOCAL_WRITE_DAEMON_SUBCOMMANDS = {"logs"}
 BLOCKED_DAEMON_SUBCOMMANDS = {"stop"}
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-PROJECT_WX_BIN = Path(__file__).resolve().parents[1] / ".wx-cli-tools" / "node_modules" / ".bin" / "wx"
+PROJECT_WX_BIN_DIR = Path(__file__).resolve().parents[1] / ".wx-cli-tools" / "node_modules" / ".bin"
+PROJECT_WX_BIN = PROJECT_WX_BIN_DIR / "wx"
+PROJECT_WX_WIN_BIN = (
+    Path(__file__).resolve().parents[1]
+    / ".wx-cli-tools"
+    / "node_modules"
+    / "@jackwener"
+    / "wx-cli-win32-x64"
+    / "bin"
+    / "wx.exe"
+)
 WX_DAEMON_DIR = Path.home() / ".wx-cli"
 WX_DAEMON_PID = WX_DAEMON_DIR / "daemon.pid"
 WX_DAEMON_LOG = WX_DAEMON_DIR / "daemon.log"
@@ -176,6 +186,8 @@ def _run_wx_json(
             check=False,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=timeout,
             cwd=str(profile_dir) if profile_dir else None,
             env=_wx_env(profile_dir),
@@ -236,6 +248,8 @@ def _run_wx_text(
             check=False,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=timeout,
             cwd=str(profile_dir) if profile_dir else None,
             env=_wx_env(profile_dir),
@@ -259,6 +273,12 @@ def _run_wx_text(
 
 
 def _find_wx() -> Optional[str]:
+    if os.name == "nt":
+        if PROJECT_WX_WIN_BIN.exists():
+            return str(PROJECT_WX_WIN_BIN)
+        project_cmd = PROJECT_WX_BIN_DIR / "wx.cmd"
+        if project_cmd.exists():
+            return str(project_cmd)
     if PROJECT_WX_BIN.exists():
         return str(PROJECT_WX_BIN)
     return shutil.which("wx")

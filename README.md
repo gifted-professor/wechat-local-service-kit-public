@@ -2,11 +2,11 @@
 
 **English** | [简体中文](README.zh-CN.md)
 
-Local-first tooling for macOS WeChat data export, customer memory, and supervised customer-service reply drafts.
+Local-first tooling for macOS and Windows WeChat data export, customer memory, and supervised customer-service reply drafts.
 
 This repository started as a WeChat Favorites visualization project. It now also includes a broader local WeChat assistant workflow:
 
-- Export encrypted macOS WeChat chat databases into structured JSONL.
+- Export encrypted local WeChat databases on macOS or Windows into structured JSONL.
 - Build deterministic, conversation-scoped customer memory profiles.
 - Render human-readable customer wiki pages for review.
 - Generate OpenAI-compatible reply drafts with optional memory context.
@@ -77,7 +77,7 @@ If `.wx-cli-tools/package-lock.json` is not present, install `wx-cli` directly:
 
 ```bash
 mkdir -p .wx-cli-tools
-npm --prefix .wx-cli-tools install @jackwener/wx-cli@0.1.10
+npm --prefix .wx-cli-tools install @jackwener/wx-cli@0.3.0
 ```
 
 The `wx-cli` integration target is [`jackwener/wx-cli`](https://github.com/jackwener/wx-cli).
@@ -185,6 +185,77 @@ Common first-install blockers:
 
 For a longer checklist and recovery notes, see [WeChat New Account Runbook](docs/wechat-new-account-runbook.md).
 
+## Windows: Capture Keys and Export Plaintext JSONL
+
+Windows support is intentionally limited to the local read/export path. It does
+not include Windows UI sending or unattended auto-reply.
+
+Requirements:
+
+- 64-bit Windows with the target account logged in to `Weixin.exe`.
+- Administrator PowerShell, Python 3.10+, Node.js 18+, and Git.
+- A known `db_storage` directory for the same account whose process memory will
+  be scanned.
+
+Install the repository dependencies from PowerShell:
+
+```powershell
+py -3 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+npm --prefix .wx-cli-tools ci
+```
+
+Discover likely Windows WeChat account and database locations without reading
+message content or secret files:
+
+```powershell
+python scripts/discover_windows_wechat.py --compact
+```
+
+Keep the target account open, enter a few representative chats, and scroll some
+history. Then run the one-shot capture from Administrator PowerShell. Replace
+the label and `db_storage` path with local values:
+
+```powershell
+python scripts/capture_windows_wx_profile.py windows-main `
+  --db-dir 'D:\wechat\xwechat_files\<wxid>\db_storage' `
+  --activate `
+  --stop-daemon
+```
+
+The scanner checks every matching `Weixin.exe` process and accepts a candidate
+key only after it validates against an encrypted database page HMAC. Raw keys
+are never printed or written to the status JSON. They are stored only in the
+gitignored local profile, such as `.wx-cli-windows-main/all_keys.json`.
+
+Verify the active profile, then run a bounded plaintext export:
+
+```powershell
+python scripts/wechat_tool_status.py --skip-daemon --compact
+
+python scripts/export_wx_cli_history.py `
+  --output '.\out\windows-smoke' `
+  --private-only `
+  --session-limit 5 `
+  --max-messages-per-conversation 50
+```
+
+Successful plaintext output appears under:
+
+```text
+out\windows-smoke\export\conversations\*.jsonl
+out\windows-smoke\export\conversation_index.json
+out\windows-smoke\export\sessions.json
+out\windows-smoke\export\coverage.json
+```
+
+If several accounts are logged in, repeat `--pid <Weixin.exe PID>` to restrict
+the scan. If the default writable-page scan finds no validated key, retry once
+with `--include-readonly`; `--include-bare-hex` is a noisier final fallback, but
+all candidates still require database HMAC validation. Never commit the profile
+directory or anything under `out/`.
+
 ## Status
 
 The repository currently contains working prototype scripts, not a packaged product.
@@ -198,6 +269,13 @@ Verified locally:
 - Single-conversation dry-run reply generation.
 - Customer memory profile generation and Markdown wiki rendering.
 - A conservative memory-use gate that avoids injecting customer history into broad/general questions.
+
+Windows read/export scope:
+
+- Account/database discovery and one-shot `Weixin.exe` memory scanning are included.
+- Candidate keys are HMAC-validated and written only to a local gitignored profile.
+- Plaintext export reuses the same `wx-cli` JSONL pipeline as macOS.
+- Runtime capture must be verified on a Windows host; it cannot be exercised from macOS CI.
 
 Still experimental:
 
@@ -223,6 +301,9 @@ See [Security and Privacy](docs/security-and-privacy.md) for the full policy.
 ```text
 scripts/
   grab_wechat_key.py             # Capture PBKDF2 events with Frida.
+  discover_windows_wechat.py     # Discover Windows account/database locations without reading messages.
+  win_wx_multi_key_scan.py       # HMAC-validate keys found in Windows Weixin.exe memory.
+  capture_windows_wx_profile.py  # Save validated keys into a local gitignored wx-cli profile.
   match_wechat_key.py            # Match captured keys against a database salt.
   chat_crypto.py                 # Prepare readable SQLite copies.
   export_chat_history.py         # Export contacts, sessions, and messages.
@@ -613,7 +694,7 @@ The durable project knowledge layer lives in [.project-wiki/](.project-wiki/inde
 
 ## Known Limitations
 
-- macOS and WeChat version changes may break key capture, database parsing, or UI automation.
+- Operating-system and WeChat version changes may break key capture, database parsing, or UI automation.
 - Message direction metadata can be unreliable in older exports; recent live context should be preferred for direction-sensitive decisions.
 - Deterministic customer facts can be noisy and should be treated as candidates.
 - UI automation can misbehave if WeChat changes layout or focus behavior.

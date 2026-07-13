@@ -56,7 +56,7 @@ npm --prefix .wx-cli-tools ci
 
 ```bash
 mkdir -p .wx-cli-tools
-npm --prefix .wx-cli-tools install @jackwener/wx-cli@0.1.10
+npm --prefix .wx-cli-tools install @jackwener/wx-cli@0.3.0
 ```
 
 确认工具可用：
